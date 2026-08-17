@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@theme {
+
+  --color-surface: #0d1a12;
+  --color-surface-elevated: #122419;
+
+  --color-text-primary: #f2f0e6;
+  --color-text-secondary: #a8b8a4;
+  --color-text-muted: #5f7060;
+
+  --color-border: #1a2e20;
+  --color-border-strong: #2a4432;
+
+  --color-primary: #b7ceb0;
+  --color-primary-hover: #c9dcc3;
+  --color-primary-muted: #2a4432;
+
+  --color-success: #7bc98f;
+  --color-success-muted: #1c3324;
+  --color-warning: #e0c27a;
+  --color-warning-muted: #332c1a;
+  --color-danger: #e2a07a;
+  --color-danger-muted: #331c1a;
+  --color-info: #7fb3d5;
+  --color-info-muted: #16273a;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+}
+
+h1, h2, h3, .font-heading {
+  font-family: var(--font-heading);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
