@@ -2,7 +2,7 @@ import { useState } from "react";
 import { AuthProvider, useAuth } from "./lib/auth";
 import { useCompanies } from "./lib/useCompanies";
 import { useIsSuperAdmin } from "./lib/useIsSuperAdmin";
-import { Sidebar, type NavSection } from "./components/sidebar";
+import { Sidebar, type NavSection } from "./components/Sidebar";
 import { Modal } from "./components/Modal";
 import { PrivacyPolicyContent } from "./components/PrivacyPolicyContent";
 import { LoginPage } from "./pages/LoginPage";

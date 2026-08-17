@@ -7,7 +7,7 @@ import { StatusBadge } from "../components/StatusBadge";
 import { LoadingState, ErrorState } from "../components/States";
 import { Button } from "../components/Button";
 import type { Invoice } from "../types/database";
-import type { NavSection } from "../components/sidebar";
+import type { NavSection } from "../components/Sidebar";
 
 export function OverviewPage({
   companyId,
