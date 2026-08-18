@@ -29,8 +29,10 @@ export function InvoiceDetailPage({
     if (!detail) return;
     setDownloading(true);
     try {
-      
-      
+      // Lazy-laddas: @react-pdf/renderer är ett stort bibliotek (fontrendering,
+      // bildstöd) som annars skulle bakas in i huvudbunten och göra att
+      // *alla* användare laddar ner det vid varje appstart, även de som
+      // aldrig laddar ner en PDF.
       const [{ pdf }, { InvoicePdfDocument }] = await Promise.all([
         import("@react-pdf/renderer"),
         import("../components/InvoicePdfDocument"),
@@ -121,6 +123,14 @@ export function InvoiceDetailPage({
                   }
                 />
               </div>
+              {detail.invoice.credited_invoice_id !== null && (
+                <p className="mt-1 text-xs font-medium text-[var(--color-warning)]">
+                  Kreditfaktura — motpost till en tidigare faktura
+                </p>
+              )}
+              {detail.invoice.status === "cancelled" && (
+                <p className="mt-1 text-xs font-medium text-[var(--color-danger)]">Makulerad faktura</p>
+              )}
               <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{detail.customer.name}</p>
             </div>
             <Button variant="primary" onClick={handleDownload} loading={downloading}>

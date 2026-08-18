@@ -1,7 +1,6 @@
 import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 import type { InvoiceDetail } from "../lib/useInvoiceDetail";
 
-
 const styles = StyleSheet.create({
   page: { padding: 40, fontSize: 10, color: "#1a1a1a" },
   headerRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 28 },
@@ -63,6 +62,13 @@ function formatDate(dateStr: string): string {
 export function InvoicePdfDocument({ detail }: { detail: InvoiceDetail }) {
   const { invoice, lines, customer, company } = detail;
 
+  const documentTitle =
+    invoice.credited_invoice_id !== null
+      ? "KREDITFAKTURA"
+      : invoice.status === "cancelled"
+        ? "MAKULERAD FAKTURA"
+        : "FAKTURA";
+
   return (
     <Document title={`Faktura ${invoice.invoice_number}`}>
       <Page size="A4" style={styles.page}>
@@ -81,7 +87,7 @@ export function InvoicePdfDocument({ detail }: { detail: InvoiceDetail }) {
             {company.f_skatt && <Text style={styles.muted}>Innehar F-skattsedel</Text>}
           </View>
           <View>
-            <Text style={styles.invoiceTitle}>FAKTURA</Text>
+            <Text style={styles.invoiceTitle}>{documentTitle}</Text>
             <View style={styles.metaBlock}>
               <Text>Fakturanr: {invoice.invoice_number}</Text>
               <Text style={styles.muted}>Fakturadatum: {formatDate(invoice.invoice_date)}</Text>
