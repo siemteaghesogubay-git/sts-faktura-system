@@ -1,16 +1,25 @@
-export type NavSection = "overview" | "invoices" | "customers" | "contracts" | "reports" | "settings";
+export type NavSection =
+  | "overview"
+  | "invoices"
+  | "customers"
+  | "contracts"
+  | "all-companies"
+  | "reports"
+  | "settings";
 
 export function Sidebar({
   active,
   onNavigate,
   companyName,
+  companyLogoUrl,
   onSignOut,
   onShowPrivacyPolicy,
   showContractsTab,
-}: { 
+}: {
   active: NavSection;
-  onNavigate: (view: NavSection) => void;  
+  onNavigate: (view: NavSection) => void;
   companyName: string;
+  companyLogoUrl?: string | null;
   onSignOut: () => void;
   onShowPrivacyPolicy: () => void;
   showContractsTab: boolean;
@@ -20,6 +29,7 @@ export function Sidebar({
     { key: "invoices", label: "Fakturor" },
     { key: "customers", label: "Kunder" },
     ...(showContractsTab ? [{ key: "contracts" as const, label: "Avtal" }] : []),
+    ...(showContractsTab ? [{ key: "all-companies" as const, label: "Alla företag" }] : []),
     { key: "reports", label: "Rapporter" },
     { key: "settings", label: "Inställningar" },
   ];
@@ -52,6 +62,13 @@ export function Sidebar({
       </div>
 
       <div className="flex flex-col gap-1 border-t border-[var(--color-border)] pt-4">
+        {companyLogoUrl && (
+          <img
+            src={companyLogoUrl}
+            alt=""
+            className="mb-1.5 h-7 w-7 rounded-[var(--radius-sm)] border border-[var(--color-border-strong)] bg-white object-contain"
+          />
+        )}
         <p className="truncate px-2 text-xs text-[var(--color-text-muted)]">{companyName}</p>
         <button
           onClick={onShowPrivacyPolicy}
