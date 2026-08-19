@@ -85,6 +85,14 @@ export function InvoiceFormPage({
 
       const { invoice_number, invoice_sequence } = numberRow;
 
+      // Genererar ett unikt, giltigt svenskt OCR-nummer (Luhn-checksumma)
+      // baserat på fakturanumret. Detta gjordes aldrig innan trots att
+      // funktionen fanns i databasen — fakturor sparades utan OCR-nummer.
+      const { data: ocrNumber, error: ocrError } = await supabase.rpc("generate_ocr_number", {
+        p_base: invoice_number,
+      });
+      if (ocrError) throw ocrError;
+
       const { data: invoice, error: invoiceError } = await supabase
         .from("invoices")
         .insert({
@@ -96,6 +104,7 @@ export function InvoiceFormPage({
           due_date: dueDate,
           status: "draft",
           notes: notes || null,
+          ocr_number: ocrNumber as string,
         })
         .select()
         .single();
@@ -118,7 +127,7 @@ export function InvoiceFormPage({
       if (linesError) throw linesError;
 
       onSaved();
-    } catch {
+    } catch (err) {
       setErrors({ form: "Något gick fel när fakturan skulle sparas. Försök igen." });
     } finally {
       setSaving(false);

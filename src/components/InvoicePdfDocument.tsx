@@ -1,6 +1,7 @@
 import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 import type { InvoiceDetail } from "../lib/useInvoiceDetail";
 
+
 const styles = StyleSheet.create({
   page: { padding: 40, fontSize: 10, color: "#1a1a1a" },
   headerRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 28 },
@@ -50,7 +51,9 @@ const styles = StyleSheet.create({
 });
 
 function formatSEK(amount: number): string {
-  return new Intl.NumberFormat("sv-SE", { style: "currency", currency: "SEK" }).format(amount);
+  return new Intl.NumberFormat("sv-SE", { style: "currency", currency: "SEK" })
+    .format(amount)
+    .replace(/\u2212/g, "-");
 }
 
 function formatDate(dateStr: string): string {
@@ -62,8 +65,7 @@ function formatDate(dateStr: string): string {
 export function InvoicePdfDocument({ detail }: { detail: InvoiceDetail }) {
   const { invoice, lines, customer, company } = detail;
 
-  const documentTitle =
-    invoice.credited_invoice_id !== null
+  const documentTitle = invoice.credited_invoice_id !== null
       ? "KREDITFAKTURA"
       : invoice.status === "cancelled"
         ? "MAKULERAD FAKTURA"

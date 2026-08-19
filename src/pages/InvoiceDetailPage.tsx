@@ -201,7 +201,8 @@ export function InvoiceDetailPage({
             )}
             {detail.invoice.status !== "draft" &&
               detail.invoice.status !== "credited" &&
-              detail.invoice.status !== "cancelled" && (
+              detail.invoice.status !== "cancelled" &&
+              detail.invoice.credited_invoice_id === null && (
                 <Button variant="danger" onClick={() => setConfirmAction("credit")}>
                   Makulera faktura
                 </Button>
@@ -273,4 +274,4 @@ function InfoCell({ label, value, emphasize }: { label: string; value: string; e
       </p>
     </div>
   );
-}
+}  
