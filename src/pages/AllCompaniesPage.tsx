@@ -13,6 +13,8 @@ export function AllCompaniesPage() {
   const [confirmTarget, setConfirmTarget] = useState<CompanyWithCounts | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [toggleError, setToggleError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -32,9 +34,6 @@ export function AllCompaniesPage() {
     setDeleting(false);
 
     if (deleteErr) {
-      // Postgres foreign_key_violation — företaget har fakturor och skyddas
-      // medvetet från radering, av samma skäl som en enskild kund eller
-      // faktura inte får raderas bakvägen.
       if (deleteErr.code === "23503") {
         setDeleteError("Kan inte tas bort — företaget har fakturor i systemet.");
       } else {
@@ -45,6 +44,30 @@ export function AllCompaniesPage() {
     }
 
     setConfirmTarget(null);
+    refetch();
+  }
+
+  async function handleToggleActive(company: CompanyWithCounts) {
+    setTogglingId(company.id);
+    setToggleError(null);
+    const { error: toggleErr } = await supabase
+      .from("companies")
+      .update({ is_active: !company.is_active })
+      .eq("id", company.id);
+    setTogglingId(null);
+
+    if (toggleErr) {
+      // Databasen blockerar medvetet inaktivering av företag där en
+      // superadmin är medlem (se migrationen) — visa det tydligt istället
+      // för att bara tyst misslyckas.
+      if (toggleErr.message.includes("superadmin")) {
+        setToggleError(`${company.name} kan inte inaktiveras eftersom en superadmin tillhör det.`);
+      } else {
+        reportError(toggleErr, { area: "superadmin_company_toggle_active", companyId: company.id });
+        setToggleError("Kunde inte ändra status. Försök igen.");
+      }
+      return;
+    }
     refetch();
   }
 
@@ -72,6 +95,12 @@ export function AllCompaniesPage() {
         </label>
       )}
 
+      {toggleError && (
+        <p role="alert" className="mt-3 text-sm text-[var(--color-danger)]">
+          {toggleError}
+        </p>
+      )}
+
       <div className="mt-6">
         {loading ? (
           <LoadingState label="Hämtar företag…" />
@@ -93,6 +122,7 @@ export function AllCompaniesPage() {
                   <th className="px-4 py-3 font-medium">Registrerat</th>
                   <th className="px-4 py-3 text-right font-medium">Medlemmar</th>
                   <th className="px-4 py-3 text-right font-medium">Fakturor</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium"></th>
                 </tr>
               </thead>
@@ -121,10 +151,33 @@ export function AllCompaniesPage() {
                     <td className="px-4 py-3 text-right text-[var(--color-text-secondary)]">
                       {company.invoice_count}
                     </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className="inline-flex items-center rounded-[var(--radius-sm)] px-2.5 py-1 text-xs font-medium"
+                        style={{
+                          backgroundColor: company.is_active
+                            ? "var(--color-success-muted)"
+                            : "var(--color-danger-muted)",
+                          color: company.is_active ? "var(--color-success)" : "var(--color-danger)",
+                        }}
+                      >
+                        {company.is_active ? "Aktivt" : "Inaktiverat"}
+                      </span>
+                    </td>
                     <td className="px-4 py-3 text-right">
-                      <Button variant="danger" size="sm" onClick={() => setConfirmTarget(company)}>
-                        Ta bort
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleToggleActive(company)}
+                          loading={togglingId === company.id}
+                        >
+                          {company.is_active ? "Inaktivera" : "Aktivera"}
+                        </Button>
+                        <Button variant="danger" size="sm" onClick={() => setConfirmTarget(company)}>
+                          Ta bort
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}

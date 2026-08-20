@@ -14,6 +14,8 @@ import { InvoiceFormPage } from "./pages/InvoiceFormPage";
 import { InvoiceDetailPage } from "./pages/InvoiceDetailPage";
 import { CustomerListPage } from "./pages/CustomerListPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { ReportsPage } from "./pages/ReportsPage";
+import { AllCompaniesPage } from "./pages/AllCompaniesPage";
 import { ContractListPage } from "./pages/ContractListPage";
 import { ContractFormPage } from "./pages/ContractFormPage";
 import { LoadingState } from "./components/States";
@@ -55,6 +57,25 @@ function AuthenticatedApp() {
 
   const activeCompany = memberships[0].company;
 
+  if (!activeCompany.is_active) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--color-background)] px-6">
+        <div className="max-w-sm rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center">
+          <h1 className="text-lg font-medium text-[var(--color-text-primary)]">Kontot är inaktiverat</h1>
+          <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+            {activeCompany.name} har inaktiverats. Kontakta oss om du tror att detta är ett misstag.
+          </p>
+          <button
+            onClick={signOut}
+            className="mt-4 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+          >
+            Logga ut
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   function handleNavigate(next: NavSection) {
     setSection(next);
     setInvoiceView({ name: "list" });
@@ -67,6 +88,7 @@ function AuthenticatedApp() {
         active={section}
         onNavigate={handleNavigate}
         companyName={activeCompany.name}
+        companyLogoUrl={activeCompany.logo_url}
         onSignOut={signOut}
         onShowPrivacyPolicy={() => setShowPrivacyPolicy(true)}
         showContractsTab={isSuperAdmin}
@@ -94,9 +116,13 @@ function AuthenticatedApp() {
           <CustomerListPage companyId={activeCompany.id} role={memberships[0].role} />
         )}
 
+        {section === "reports" && <ReportsPage companyId={activeCompany.id} />}
+
         {section === "settings" && (
           <SettingsPage companyId={activeCompany.id} role={memberships[0].role} />
         )}
+
+        {section === "all-companies" && isSuperAdmin && <AllCompaniesPage />}
 
         {section === "invoices" && invoiceView.name === "list" && (
           <InvoiceListPage
@@ -117,7 +143,8 @@ function AuthenticatedApp() {
         )}
 
         {section === "contracts" && isSuperAdmin && contractView.name === "list" && (
-          <ContractListPage
+                    <ContractListPage
+            issuerCompany={activeCompany}
             onCreate={() => setContractView({ name: "create" })}
             onEdit={(contract) => setContractView({ name: "edit", contract })}
           />

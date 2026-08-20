@@ -30,18 +30,24 @@ export function useAllCompanies() {
     // Räknar medlemmar och fakturor per företag. Görs som separata frågor
     // (inte en enda join) eftersom Supabase-klientens count-stöd är
     // enklast att kombinera på det sättet för flera oberoende tabeller.
-    const withCounts = await Promise.all(
-      companyRows.map(async (company) => {
-        const [{ count: memberCount }, { count: invoiceCount }] = await Promise.all([
-          supabase.from("company_users").select("id", { count: "exact", head: true }).eq("company_id", company.id),
-          supabase.from("invoices").select("id", { count: "exact", head: true }).eq("company_id", company.id),
-        ]);
-        return { ...company, member_count: memberCount ?? 0, invoice_count: invoiceCount ?? 0 } as CompanyWithCounts;
-      })
-    );
-
-    setCompanies(withCounts);
-    setLoading(false);
+    // Omslutet i try/catch — annars fastnar hämtningen i "loading" för
+    // evigt utan felmeddelande om en enda räkning skulle kasta ett fel.
+    try {
+      const withCounts = await Promise.all(
+        companyRows.map(async (company) => {
+          const [{ count: memberCount }, { count: invoiceCount }] = await Promise.all([
+            supabase.from("company_users").select("id", { count: "exact", head: true }).eq("company_id", company.id),
+            supabase.from("invoices").select("id", { count: "exact", head: true }).eq("company_id", company.id),
+          ]);
+          return { ...company, member_count: memberCount ?? 0, invoice_count: invoiceCount ?? 0 } as CompanyWithCounts;
+        })
+      );
+      setCompanies(withCounts);
+    } catch {
+      setError("Kunde inte hämta företag.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {

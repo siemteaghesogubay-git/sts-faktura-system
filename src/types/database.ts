@@ -22,6 +22,7 @@ export interface Company {
   next_invoice_number: number;
   default_payment_days: number;
   logo_url: string | null;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }

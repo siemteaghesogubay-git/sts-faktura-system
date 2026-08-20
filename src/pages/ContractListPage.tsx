@@ -5,7 +5,8 @@ import { ContractStatusBadge } from "../components/StatusBadge";
 import { Button } from "../components/Button";
 import { EmptyState, ErrorState, LoadingState } from "../components/States";
 import { supabase } from "../lib/supabase";
-import type { Contract, ContractStatus } from "../types/database";
+import { reportError } from "../lib/errorMonitoring";
+import type { Contract, ContractStatus, Company } from "../types/database";
 
 const FILTERS: { value: ContractStatus | "all"; label: string }[] = [
   { value: "all", label: "Alla" },
@@ -22,14 +23,17 @@ const FEE_TYPE_LABELS: Record<string, string> = {
 };
 
 export function ContractListPage({
+  issuerCompany,
   onCreate,
   onEdit,
 }: {
+  issuerCompany: Company;
   onCreate: () => void;
   onEdit: (contract: Contract) => void;
 }) {
   const { contracts, loading, error, refetch } = useContracts();
   const [activeFilter, setActiveFilter] = useState<ContractStatus | "all">("all");
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const filtered = useMemo(
     () => (activeFilter === "all" ? contracts : contracts.filter((c) => c.status === activeFilter)),
@@ -39,6 +43,31 @@ export function ContractListPage({
   async function updateStatus(contract: Contract, status: ContractStatus) {
     await supabase.from("contracts").update({ status }).eq("id", contract.id);
     refetch();
+  }
+
+  async function handleDownload(contract: Contract) {
+    setDownloadingId(contract.id);
+    try {
+      // Lazy-laddas av samma skäl som fakturans PDF: @react-pdf/renderer är
+      // stort (fontrendering, bildstöd) och ska inte bakas in i huvudbunten.
+      const [{ pdf }, { ContractPdfDocument }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("../components/ContractPdfDocument"),
+      ]);
+      const blob = await pdf(<ContractPdfDocument contract={contract} issuer={issuerCompany} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Avtal - ${contract.client_name}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      reportError(err, { area: "contract_pdf_download", contractId: contract.id });
+    } finally {
+      setDownloadingId(null);
+    }
   }
 
   return (
@@ -118,6 +147,14 @@ export function ContractListPage({
                     {formatSEK(contract.fee_amount)} · {FEE_TYPE_LABELS[contract.fee_type]}
                   </span>
                   <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownload(contract)}
+                      loading={downloadingId === contract.id}
+                    >
+                      Ladda ner PDF
+                    </Button>
                     {contract.status === "sent" && (
                       <Button variant="outline" size="sm" onClick={() => updateStatus(contract, "signed")}>
                         Markera signerat

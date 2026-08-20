@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
+import { uploadCompanyLogo } from "../lib/uploadLogo";
 import { TextField } from "../components/FormField";
 import { Button } from "../components/Button";
-import { uploadCompanyLogo } from "../lib/uploadLogo";
 
 export function OnboardingPage({ onCreated }: { onCreated: () => void }) {
   const { signOut } = useAuth();
   const [name, setName] = useState("");
   const [orgNumber, setOrgNumber] = useState("");
   const [vatNumber, setVatNumber] = useState("");
+  const [bankgiro, setBankgiro] = useState("");
+  const [plusgiro, setPlusgiro] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,11 +45,24 @@ export function OnboardingPage({ onCreated }: { onCreated: () => void }) {
       return;
     }
 
+    // Betalningsuppgifter sätts som ett separat steg efter att företaget
+    // (och ägarens medlemskap) skapats, eftersom create_company_with_owner
+    // bara hanterar de fält som krävs för att skapa raden överhuvudtaget.
+    if (bankgiro.trim() || plusgiro.trim()) {
+      await supabase
+        .from("companies")
+        .update({
+          bankgiro: bankgiro.trim() || null,
+          plusgiro: plusgiro.trim() || null,
+        })
+        .eq("id", companyId);
+    }
+
     if (logoFile) {
       const { error: logoError } = await uploadCompanyLogo(companyId, logoFile);
       if (logoError) {
         // Företaget skapades ändå — loggan kan läggas till senare under
-        // Inställningar, så  blockeraras inte hela flödet för det.
+        // Inställningar, så vi blockerar inte hela flödet för det.
         setLoading(false);
         onCreated();
         return;
@@ -93,6 +108,27 @@ export function OnboardingPage({ onCreated }: { onCreated: () => void }) {
             placeholder="SE556677889901"
             hint="Krävs på alla svenska fakturor enligt momslagen."
           />
+
+          <div className="grid grid-cols-2 gap-3">
+            <TextField
+              label="Bankgiro"
+              id="onboard-bankgiro"
+              value={bankgiro}
+              onChange={(e) => setBankgiro(e.target.value)}
+              placeholder="123-4567"
+            />
+            <TextField
+              label="Plusgiro"
+              id="onboard-plusgiro"
+              value={plusgiro}
+              onChange={(e) => setPlusgiro(e.target.value)}
+              placeholder="12 34 56-7"
+            />
+          </div>
+          <p className="-mt-2 text-xs text-[var(--color-text-muted)]">
+            Valfritt nu, men behövs för att kunder ska kunna betala era fakturor. Kan läggas till senare under
+            Inställningar om ni inte har uppgifterna till hands.
+          </p>
 
           <div className="flex flex-col gap-1.5">
             <label htmlFor="onboard-logo" className="text-sm font-medium text-[var(--color-text-primary)]">
